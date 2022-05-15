@@ -29,9 +29,9 @@ def extract(file_names, imsize: int):
 
 
 def preprocess(
-    data_location: str = "/mnt/facial_expression_dataset",
+    data_location: str = "data",
     imsize: int = 128,
-    destination_folder: str = "/mnt/preprocessed_data.h5",
+    destination_folder: str = "preprocessed_data.h5",
 ):
     labels = {
         key: val
