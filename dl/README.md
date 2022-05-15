@@ -1,6 +1,6 @@
 ### Todos:
-	[ ] labels distributions plot
-	[ ] data augmentation
+	- [ ] labels distributions plot
+	- [ ] data augmentation
 	[ ] facial cropping during preprocessing
 	[ ] hyperparameteres optimization
 	[ ] report
