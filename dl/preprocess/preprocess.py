@@ -10,7 +10,7 @@ import pandas as pd
 
 
 def extract(file_names, imsize: int):
-    return tuple(
+    data_with_labels = tuple(
         (
             label,
             t.from_numpy(
@@ -23,6 +23,9 @@ def extract(file_names, imsize: int):
         )
         for file_name, label in file_names
     )
+    labels = t.tensor([label for label, _ in data_with_labels])
+    data = t.stack([data for _, data in data_with_labels])
+    return labels, data
 
 
 def preprocess(
@@ -50,10 +53,11 @@ def preprocess(
     cutting_index = int(0.2 * len(files))
     test_file_names = shuffled_files[:cutting_index]
     train_file_names = shuffled_files[cutting_index:]
-    train_data = extract(train_file_names, imsize)
-    test_data = extract(test_file_names, imsize)
+    train_labels, train_data = extract(train_file_names, imsize)
+    test_labels, test_data = extract(test_file_names, imsize)
     # saves train_data and test_data in h5py format
     with h5py.File(destination_folder, "w") as f:
-        ipdb.set_trace()
-        f.create_dataset("train", data=train_data)
-        f.create_dataset("test", data=test_data)
+        f.create_dataset("train_data", data=train_data)
+        f.create_dataset("train_labels", data=train_labels)
+        f.create_dataset("test_data", data=test_data)
+        f.create_dataset("test_labels", data=test_labels)
