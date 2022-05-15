@@ -1,4 +1,9 @@
+Preprocess:
+```
+python -m dl.preprocess
+```
+
 Run:
 ```
-python -m gan resnet train
+python -m dl train <name of the model>
 ```
