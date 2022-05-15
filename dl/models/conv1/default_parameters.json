@@ -2,7 +2,7 @@
 	"cuda": true,
 	"train_batch_size": 6,
 	"test_batch_size": 50,
-	"imsize": 64, 
+	"imsize": 128, 
 	"n_channels": 4,  
 	"ngf": 64,
 	"ndf": 32,
@@ -15,7 +15,7 @@
 	"out_seq_len": 5,
 	"max_epochs": 100,
 	"early_stopping_patience": 5,
-	"reduce_lr_on_plateau_patience": 5,
-	"data_location": "./datasets/4ch_coastal_normalization.h5",
+	"reduce_lr_on_plateau_patience": 2,
+	"data_location": "/mnt/preprocessed_data.h5",
 	"crop":64
 }

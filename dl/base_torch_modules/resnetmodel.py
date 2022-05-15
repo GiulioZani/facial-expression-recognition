@@ -8,7 +8,7 @@ import torchvision
 
 from numpy import prod
 from torch import nn, optim
-from dcgan.dense_layer import AVGPoolConcatDenseLayer
+from .dense_layer import AVGPoolConcatDenseLayer
 
 from .conv2dmodel import GaussianNoise
 
@@ -313,6 +313,7 @@ class ResNetBlock(nn.Module):
             act_fn(),
             nn.Conv2d(c_out, c_out, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(c_out),
+            nn.Dropout(0.3),
         )
 
         # 1x1 convolution with stride 2 means we take the upper left value, and transform it to new output size
@@ -433,23 +434,11 @@ class ResNetFrameDiscriminator(nn.Module):
             self.hparams.block_class == PreActResNetBlock
         ):  # => Don't apply non-linearity on output
             self.input_net = nn.Sequential(
-                nn.Conv2d(
-                    self.params["out_seq_len"],
-                    c_hidden[0],
-                    kernel_size=3,
-                    padding=1,
-                    bias=False,
-                )
+                nn.Conv2d(1, c_hidden[0], kernel_size=3, padding=1, bias=False,)
             )
         else:
             self.input_net = nn.Sequential(
-                nn.Conv2d(
-                    self.params["out_seq_len"],
-                    c_hidden[0],
-                    kernel_size=3,
-                    padding=1,
-                    bias=False,
-                ),
+                nn.Conv2d(1, c_hidden[0], kernel_size=3, padding=1, bias=False,),
                 nn.BatchNorm2d(c_hidden[0]),
                 self.hparams.act_fn(),
             )
@@ -471,17 +460,12 @@ class ResNetFrameDiscriminator(nn.Module):
                 )
         self.blocks = nn.Sequential(*blocks)
 
-        # Mapping to classification output
-        if self.outputblock == "avgpool_plus_dense":
-
-            self.output_net = AVGPoolConcatDenseLayer(self.params, c_hidden[-1], 16, 64)
-        else:
-            self.output_net = nn.Sequential(
-                nn.AdaptiveAvgPool2d((1, 1)),
-                nn.Flatten(),
-                nn.Linear(c_hidden[-1], 1),
-                nn.Sigmoid(),
-            )
+        self.output_net = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+            nn.Linear(c_hidden[-1], 8),
+            nn.Softmax(dim=1),
+        )
 
     def _init_params(self):
         # Based on our discussion in Tutorial 4, we should initialize the convolutions according to the activation function
@@ -514,7 +498,7 @@ class ResNetFrameDiscriminator(nn.Module):
         # ipdb.set_trace()
 
         x = self.output_net(x)
-        return x.squeeze(1)
+        return x
 
 
 class ResNetTemproalDiscriminator(nn.Module):

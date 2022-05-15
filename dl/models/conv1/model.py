@@ -1,22 +1,47 @@
-from ...base_lightning_modules.base_model import BaseModel
-#from ...base_torch_modules.resnetmodel import (
-#)
-#..conv2dmodel import FrameDiscriminator
+from torch.nn.modules.activation import ReLU
+from ...base_lightning_modules.base_classification_model import (
+    BaseClassificationModel,
+)
+import ipdb
+
+from ...base_torch_modules.resnetmodel import ResNetFrameDiscriminator
 import torch as t
 from torch import nn
 import torch.nn.functional as F
 from argparse import Namespace
 
+
 class ConvModel(nn.Module):
     def __init__(self, params):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+        )
+        self.linear = nn.Linear(128, 4)
 
     def forward(self, x):
-        return F.relu(self.conv1(x))
+        x = x.unsqueeze(1)
+        x = self.conv_layers(x)
+        ipdb.set_trace()
+        x = t.softmax(self.linear(x.view(x.size(0), -1)), dim=1)
+        return x
 
 
-class Model(BaseModel):
+class Model(BaseClassificationModel):
     def __init__(self, params: Namespace):
         super().__init__(params)
-        self.generator = ConvModel(params)
+        self.generator = ResNetFrameDiscriminator(params)
