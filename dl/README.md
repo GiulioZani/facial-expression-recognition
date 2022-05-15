@@ -1,9 +1,9 @@
 ### Todos:
-	- [ ] labels distributions plot
-	- [ ] data augmentation
-	[ ] facial cropping during preprocessing
-	[ ] hyperparameteres optimization
-	[ ] report
+- [ ] labels distributions plot
+- [ ] data augmentation
+- [ ] facial cropping during preprocessing
+- [ ] hyperparameteres optimization
+- [ ] report
 Preprocess:
 ```
 python -m dl.preprocess
