@@ -44,7 +44,7 @@ class CustomDataModule(LightningDataModule):
     def val_dataloader(self):
         # creates a DeepCoastalDataset object
         dataset = CustomDataset(
-            self.train_data,
+            self.test_data,
             self.test_labels,
             train=False,
             imsize=self.params.imsize,
@@ -85,7 +85,8 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         x = self.data[idx].unsqueeze(0)
-        labels = t.eye(8)[self.labels[idx]].float()
+        proto_labels = self.labels[idx]
+        labels = t.eye(8)[proto_labels].float()
         return x, labels
 
 

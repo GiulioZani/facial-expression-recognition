@@ -2,7 +2,7 @@
     "model": "conv1",
     "target": "/home/bluesk/Documents/facial-expression-recognition/dlm/results",
     "cuda": true,
-    "train_batch_size": 6,
+    "train_batch_size": 16,
     "test_batch_size": 50,
     "imsize": 128,
     "n_channels": 4,
