@@ -85,8 +85,7 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         x = self.data[idx].unsqueeze(0)
-        proto_labels = self.labels[idx]
-        labels = t.eye(8)[proto_labels].float()
+        labels = self.labels[idx].long()
         return x, labels
 
 

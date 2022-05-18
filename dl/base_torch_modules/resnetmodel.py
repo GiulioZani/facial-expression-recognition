@@ -14,7 +14,9 @@ from .conv2dmodel import GaussianNoise
 
 
 class ResNetBlock(nn.Module):
-    def __init__(self, input_count, activation, output_reduction=False, output_count=-1):
+    def __init__(
+        self, input_count, activation, output_reduction=False, output_count=-1
+    ):
         """
         input_count - number of input features
         activation - activation function
@@ -35,16 +37,24 @@ class ResNetBlock(nn.Module):
                 stride=1 if not output_reduction else 2,
                 bias=False,
             ),
-            nn.BatchNorm2d(output_count), # handles bias
+            nn.BatchNorm2d(output_count),  # handles bias
             activation(),
-            nn.Conv2d(output_count, output_count, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(
+                output_count,
+                output_count,
+                kernel_size=3,
+                padding=1,
+                bias=False,
+            ),
             nn.BatchNorm2d(output_count),
             nn.Dropout(0.3),
         )
 
         # 1x1 convolution, stride 2
         self.downsample = (
-            nn.Conv2d(input_count, output_count, kernel_size=1, stride=2) if output_reduction else None
+            nn.Conv2d(input_count, output_count, kernel_size=1, stride=2)
+            if output_reduction
+            else None
         )
         self.activation = activation()
 
@@ -58,7 +68,9 @@ class ResNetBlock(nn.Module):
 
 
 class PreActResNetBlock(nn.Module):
-    def __init__(self, input_count, activation, output_reduction=False, output_count=-1):
+    def __init__(
+        self, input_count, activation, output_reduction=False, output_count=-1
+    ):
         """
         input_count - number of input features
         activation - activation function
@@ -83,7 +95,13 @@ class PreActResNetBlock(nn.Module):
             ),
             nn.BatchNorm2d(output_count),
             activation(),
-            nn.Conv2d(output_count, output_count, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(
+                output_count,
+                output_count,
+                kernel_size=3,
+                padding=1,
+                bias=False,
+            ),
         )
 
         # 1x1 convolution, non-linearity | not done on skip connection
@@ -91,7 +109,13 @@ class PreActResNetBlock(nn.Module):
             nn.Sequential(
                 nn.BatchNorm2d(input_count),
                 activation(),
-                nn.Conv2d(input_count, output_count, kernel_size=1, stride=2, bias=False),
+                nn.Conv2d(
+                    input_count,
+                    output_count,
+                    kernel_size=1,
+                    stride=2,
+                    bias=False,
+                ),
             )
             if output_reduction
             else None
@@ -158,11 +182,23 @@ class ResNetEmotionClassifier(nn.Module):
             self.hparams.block_class == PreActResNetBlock
         ):  # only apply non-linearity on non-outputs
             self.input_net = nn.Sequential(
-                nn.Conv2d(1, blocks_dimensions[0], kernel_size=3, padding=1, bias=False,)
+                nn.Conv2d(
+                    1,
+                    blocks_dimensions[0],
+                    kernel_size=3,
+                    padding=1,
+                    bias=False,
+                )
             )
         else:
             self.input_net = nn.Sequential(
-                nn.Conv2d(1, blocks_dimensions[0], kernel_size=3, padding=1, bias=False,),
+                nn.Conv2d(
+                    1,
+                    blocks_dimensions[0],
+                    kernel_size=3,
+                    padding=1,
+                    bias=False,
+                ),
                 nn.BatchNorm2d(blocks_dimensions[0]),
                 self.hparams.activation(),
             )
@@ -176,7 +212,11 @@ class ResNetEmotionClassifier(nn.Module):
                 )  # output_reduction on first block of each group (except in first one)
                 blocks.append(
                     self.hparams.block_class(
-                        input_count=blocks_dimensions[block_idx if not output_reduction else (block_idx - 1)],
+                        input_count=blocks_dimensions[
+                            block_idx
+                            if not output_reduction
+                            else (block_idx - 1)
+                        ],
                         activation=self.hparams.activation,
                         output_reduction=output_reduction,
                         output_count=blocks_dimensions[block_idx],
@@ -188,7 +228,6 @@ class ResNetEmotionClassifier(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
             nn.Linear(blocks_dimensions[-1], 8),
-            nn.Softmax(dim=1),
         )
 
     def _init_params(self):
@@ -196,14 +235,16 @@ class ResNetEmotionClassifier(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(
-                    m.weight, mode="fan_out", nonlinearity=self.hparams.activation_name
+                    m.weight,
+                    mode="fan_out",
+                    nonlinearity=self.hparams.activation_name,
                 )
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        
+
         x = x.squeeze(2)
 
         # add noise:

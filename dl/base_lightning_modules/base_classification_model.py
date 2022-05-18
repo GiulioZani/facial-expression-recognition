@@ -16,9 +16,18 @@ class BaseClassificationModel(LightningModule):
         self.params = params
         self.save_hyperparameters()
         self.generator = t.nn.Sequential()
-        self.loss = t.nn.BCELoss()
+        self.loss = t.nn.CrossEntropyLoss()
         self.val_accuracy = torchmetrics.Accuracy()
         self.test_accuracy = torchmetrics.Accuracy()
+
+    def label_to_one_hot(self, labels: t.Tensor, n_classes=8):
+        labels = labels.long()
+        labels = labels.to(self.device)
+        labels = t.eye(n_classes)[labels].to(self.device)
+        return labels
+
+    def one_hot_to_label(self, one_hot: t.Tensor, n_classes=8):
+        return t.argmax(one_hot, dim=1)
 
     def forward(self, z: t.Tensor) -> t.Tensor:
         out = self.generator(z)
@@ -47,20 +56,14 @@ class BaseClassificationModel(LightningModule):
         x, y = batch
         if batch_idx == 0:
             pass
-        pred_y = self(x)
-        maxes = t.argmax(pred_y, dim=1)
-        pred_y = t.eye(8)[maxes].to(self.device)
-        y = y.int()
+        pred_y = self.one_hot_to_label(self(x))
         self.val_accuracy.update(pred_y, y)
 
     def test_step(self, batch: tuple[t.Tensor, t.Tensor], batch_idx: int):
         x, y = batch
         if batch_idx == 0:
             pass
-        pred_y = self(x)
-        maxes = t.argmax(pred_y, dim=1)
-        pred_y = t.eye(8)[maxes].to(self.device)
-        y = y.int()
+        pred_y = self.label_to_one_hot(self(x))
         self.test_accuracy.update(pred_y, y)
         return
 

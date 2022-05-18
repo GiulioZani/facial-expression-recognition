@@ -1,6 +1,6 @@
 {
     "model": "resnet",
-    "target": "C:\\Users\\wiebk\\OneDrive\\Desktop\\Maastricht\\CV\\Assignments\\Assignment2\\newgit\\facial-expression-recognition\\dlm\\results",
+    "target": "/home/bluesk/Documents/facial-expression-recognition/dlm/results",
     "cuda": true,
     "train_batch_size": 16,
     "test_batch_size": 50,
@@ -18,6 +18,6 @@
     "max_epochs": 100,
     "early_stopping_patience": 5,
     "reduce_lr_on_plateau_patience": 2,
-    "data_location": "preprocessed_data.h5",
+    "data_location": "/mnt/preprocessed_data.h5",
     "crop": 64
 }
