@@ -1,21 +1,17 @@
 from types import SimpleNamespace
 
 import ipdb
-import torch
-import torch as t
 import torch.nn.functional as F
-import torchvision
-
-from numpy import prod
-from torch import nn, optim
-
-from .dense_layer import AVGPoolConcatDenseLayer
-from .conv2dmodel import GaussianNoise
+from torch import nn
 
 
 class ResNetBlock(nn.Module):
     def __init__(
-        self, input_count, activation, output_reduction=False, output_count=-1
+        self,
+        input_count: int,
+        activation,
+        output_reduction=False,
+        output_count=-1,
     ):
         """
         input_count - number of input features
@@ -27,7 +23,6 @@ class ResNetBlock(nn.Module):
         if not output_reduction:
             output_count = input_count
 
-        # network
         self.net = nn.Sequential(
             nn.Conv2d(
                 input_count,
@@ -145,7 +140,7 @@ class ResNetEmotionClassifier(nn.Module):
     def __init__(
         self,
         params,
-        blocks_count=[3, 3, 3],
+        blocks_count=(3, 3, 3),
         blocks_dimensions=[32, 64, 128],
         activation_name="relu",
         block_name="ResNetBlock",
@@ -177,10 +172,9 @@ class ResNetEmotionClassifier(nn.Module):
     def _create_network(self):
         blocks_dimensions = self.hparams.blocks_dimensions
 
-        # convolution on original image (upscaling channel size)
-        if (
+        if (  # if the output block is not the last one
             self.hparams.block_class == PreActResNetBlock
-        ):  # only apply non-linearity on non-outputs
+        ):
             self.input_net = nn.Sequential(
                 nn.Conv2d(
                     1,
@@ -209,9 +203,9 @@ class ResNetEmotionClassifier(nn.Module):
             for bc in range(block_count):
                 output_reduction = (
                     bc == 0 and block_idx > 0
-                )  # output_reduction on first block of each group (except in first one)
+                )  # if first block in the block group, reduce output shape
                 blocks.append(
-                    self.hparams.block_class(
+                    self.hparams.block_class(  # create block
                         input_count=blocks_dimensions[
                             block_idx
                             if not output_reduction
@@ -231,7 +225,6 @@ class ResNetEmotionClassifier(nn.Module):
         )
 
     def _init_params(self):
-        # initialize convolutions according to activation function
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(
@@ -246,14 +239,6 @@ class ResNetEmotionClassifier(nn.Module):
     def forward(self, x):
 
         x = x.squeeze(2)
-
-        # add noise:
-        # noise_matrix_size = 12
-        # noise = t.randn( self.params['generator_in_seq_len'] , noise_matrix_size, noise_matrix_size)
-
-        # x_concat = t.zeros((x.shape[0], x.shape[1], x.shape[2]+ noise_matrix_size, x.shape[3]+ noise_matrix_size))
-        # x_concat[:,:,:x.shape[2], :x.shape[3]] = x
-        # x_concat[:,:,x.shape[2]:, x.shape[3]:] = noise
 
         x = self.input_net(x)
         x = self.blocks(x)

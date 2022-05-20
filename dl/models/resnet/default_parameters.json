@@ -17,5 +17,6 @@
 	"early_stopping_patience": 5,
 	"reduce_lr_on_plateau_patience": 2,
 	"data_location": "/mnt/preprocessed_data.h5",
-	"crop":64
+	"crop":64,
+	"exec":"classify_videos"
 }

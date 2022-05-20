@@ -10,7 +10,7 @@ import skvideo.io
 import torch as t
 
 
-def custom_test(model: nn.Module):
+def main(model: nn.Module):
     class_labels = [
         "sad",
         "surprise",
