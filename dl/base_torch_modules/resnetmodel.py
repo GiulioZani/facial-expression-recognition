@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import ipdb
 import torch.nn.functional as F
 from torch import nn
+import matplotlib.pyplot as plt
 
 
 class ResNetBlock(nn.Module):
@@ -237,11 +238,16 @@ class ResNetEmotionClassifier(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-
+        raw_x = x
         x = x.squeeze(2)
 
         x = self.input_net(x)
         x = self.blocks(x)
-
+        if True:
+            _, axes = plt.subplots(1, 2)
+            filter = 127
+            axes[0].imshow(raw_x[0, 0].cpu())
+            axes[1].imshow(x[0, filter].cpu())
+            plt.show()
         x = self.output_net(x)
         return x
