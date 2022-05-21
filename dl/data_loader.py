@@ -11,6 +11,7 @@ import pandas as pd
 import cv2
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 
 
 class CustomDataModule(LightningDataModule):
@@ -21,6 +22,7 @@ class CustomDataModule(LightningDataModule):
         self.test_batch_size = params.test_batch_size
         self.data_location = params.data_location
         self.params = params
+        self.shuffle = True
         # reads the file names from the data_location in h5 format
         with h5py.File(self.data_location, "r") as f:
             self.train_data = t.from_numpy(f["train_data"][:])
@@ -41,6 +43,7 @@ class CustomDataModule(LightningDataModule):
             batch_size=self.train_batch_size,
             drop_last=True,
             num_workers=3,
+            shuffle=self.shuffle,
         )
 
     def val_dataloader(self):
@@ -83,34 +86,39 @@ class CustomDataset(Dataset):
         self.train = train
 
     def __len__(self):
-        return 4*len(self.data) # include augmentations
+        return len(self.data)
 
     def __getitem__(self, idx):
-        x = self.data[idx%4].unsqueeze(0)
+        x = self.data[idx].unsqueeze(0)
         image = x.numpy()
-        labels = self.labels[idx%4].long()
+        labels = self.labels[idx].long()
+        # augmentation_prob = 0.15
+        augmentation_prob = 0.1
+        pick = t.rand(1).item()
         # determine augmentation category:
-        if int(idx/4) == 0: # Sharpening filter
-            kernel = np.array([[0, -1, 0],
-                       [-1, 5, -1],
-                       [0, -1, 0]])
-            image_sharp = cv2.filter2D(src=image, ddepth=-1, kernel=kernel)
+        if pick < augmentation_prob:  # Sharpening filter
+            kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+            image_sharp = t.from_numpy(
+                cv2.filter2D(src=image, ddepth=-1, kernel=kernel)
+            )
             return image_sharp, labels
-        elif int(idx/4) == 1: # Bilateral filtering
-            help = np.array(image)
-            print("\n\n help = ",help,"\n\n")
-            image_filtered = cv2.bilateralFilter(help, 5, 12, 16)
+        elif pick < 2 * augmentation_prob:  # Image Rotation
+            image_filtered = t.from_numpy(
+                cv2.GaussianBlur(image, (5, 5), sigmaX=0)
+            )
             return image_filtered, labels
-        elif idx/4 == 2: # Image Rotation
+        elif pick < 3 * augmentation_prob:  # Image Rotation
             # calculate center of image
-            (h, w) = image.shape[:2]
-            (cX, cY) = (w // 2, h // 2)
+            h, w = image.shape[:2]
+            cX, cY = (w // 2, h // 2)
             # get rotation matrix
             M_rotate_x_45 = cv2.getRotationMatrix2D((cX, cY), 45, 1.0)
             # rotate by 45 degrees
-            image_rotated_45 = cv2.warpAffine(image, M_rotate_x_45, (w, h))
+            image_rotated_45 = t.from_numpy(
+                cv2.warpAffine(image, M_rotate_x_45, (w, h))
+            )
             return image_rotated_45, labels
-        else: # Image Scaling
+        else:
             return x, labels
 
 
