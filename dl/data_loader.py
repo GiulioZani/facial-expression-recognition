@@ -9,6 +9,8 @@ from pytorch_lightning import LightningDataModule
 from .utils.data_manager import DataManger
 import pandas as pd
 import cv2
+import numpy as np
+import sys
 
 
 class CustomDataModule(LightningDataModule):
@@ -81,12 +83,35 @@ class CustomDataset(Dataset):
         self.train = train
 
     def __len__(self):
-        return len(self.data)
+        return 4*len(self.data) # include augmentations
 
     def __getitem__(self, idx):
-        x = self.data[idx].unsqueeze(0)
-        labels = self.labels[idx].long()
-        return x, labels
+        x = self.data[idx%4].unsqueeze(0)
+        image = x.numpy()
+        labels = self.labels[idx%4].long()
+        # determine augmentation category:
+        if int(idx/4) == 0: # Sharpening filter
+            kernel = np.array([[0, -1, 0],
+                       [-1, 5, -1],
+                       [0, -1, 0]])
+            image_sharp = cv2.filter2D(src=image, ddepth=-1, kernel=kernel)
+            return image_sharp, labels
+        elif int(idx/4) == 1: # Bilateral filtering
+            help = np.array(image)
+            print("\n\n help = ",help,"\n\n")
+            image_filtered = cv2.bilateralFilter(help, 5, 12, 16)
+            return image_filtered, labels
+        elif idx/4 == 2: # Image Rotation
+            # calculate center of image
+            (h, w) = image.shape[:2]
+            (cX, cY) = (w // 2, h // 2)
+            # get rotation matrix
+            M_rotate_x_45 = cv2.getRotationMatrix2D((cX, cY), 45, 1.0)
+            # rotate by 45 degrees
+            image_rotated_45 = cv2.warpAffine(image, M_rotate_x_45, (w, h))
+            return image_rotated_45, labels
+        else: # Image Scaling
+            return x, labels
 
 
 def test():
