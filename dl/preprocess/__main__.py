@@ -7,6 +7,7 @@ from ..utils.data_manager import DataManger
 import h5py
 import cv2
 import pandas as pd
+from argparse import ArgumentParser
 
 
 def extract(file_names, imsize: int):
@@ -61,3 +62,27 @@ def preprocess(
         f.create_dataset("train_labels", data=train_labels)
         f.create_dataset("test_data", data=test_data)
         f.create_dataset("test_labels", data=test_labels)
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--data_location",
+        type=str,
+        default="data",
+        help="Folder where dataset is saved.",
+    )
+    parser.add_argument(
+        "--imsize",
+        type=int,
+        default=128,
+        help="Size of the image after downsampling.",
+    )
+    parser.add_argument(
+        "--destination_folder",
+        type=str,
+        default="preprocessed_data.h5",
+        help="Folder where the preprcessed dataset is saved.",
+    )
+    args = parser.parse_args()
+    preprocess(**args.__dict__)
