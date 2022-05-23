@@ -15,14 +15,17 @@ pip install -r dlpm/requirements.txt
 pip install -r dl/requirements.txt
 ```
 `dlpm` is a framework for running and testing deep learning models. The code relevant to this specific task is contained in the `dl` folder.
+
 ## Download the dataset
 The dataset can be downloaded form [kaggle.](https://www.kaggle.com/datasets/tom99763/affectnethq) The size is 9GB.
 
 ```
-python -m dl.preprocess --dataset_path=dataset/affectnet.zip --output_path=dataset/affectnet
+python -m dl.preprocess --dataset_path=<unzipped folder containing data> --destination_folder=<preprocessed location>
 ```
 
-Test the model:
+
+## Test the model:
+First you need to edit the `dl/models/resnet/default_parameters.json` file and set the `data_location` parameter to the location of the preprocessed dataset. Then run:
 ```
 python -m dlpm test resnet
 ```
