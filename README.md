@@ -24,7 +24,7 @@ python -m dl.preprocess --dataset_path=<unzipped folder containing data> --desti
 ```
 
 
-## Test the model:
+## Test the model
 First you need to edit the `dl/models/resnet/default_parameters.json` file and set the `data_location` parameter to the location of the preprocessed dataset. Then run:
 ```
 python -m dlpm test resnet
