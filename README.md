@@ -30,4 +30,8 @@ First you need to edit the `dl/models/resnet/default_parameters.json` file and s
 python -m dlpm test resnet
 ```
 
+To classify webcam videos, run:
+```
+python -m dlpm exec resnet
+```
 

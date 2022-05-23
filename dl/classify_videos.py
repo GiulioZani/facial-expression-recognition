@@ -9,7 +9,6 @@ import ipdb
 import skvideo.io
 import torch as t
 
-
 def main(model: nn.Module):
     class_labels = [
         "sad",
@@ -27,17 +26,17 @@ def main(model: nn.Module):
         "dl/video/face_detector/haarcascade_frontalface_default.xml"
     )
     cap = cv2.VideoCapture(0)
-    # for frame in videodata:
+    #for i, frame in enumerate(videodata):
     while cap.isOpened():
         ret, frame = cap.read()
         labels = []
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+        predicted_labels = []
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             roi_gray = gray[y : y + h, x : x + w]
             roi_gray = cv2.resize(roi_gray, (128, 128), interpolation=cv2.INTER_AREA)
-
             if np.sum([roi_gray]) != 0:
                 roi = tt.functional.to_pil_image(roi_gray)
                 roi = tt.functional.to_grayscale(roi)
@@ -45,9 +44,9 @@ def main(model: nn.Module):
 
                 # make a prediction on the ROI
                 tensor = model(roi)
-                pred = torch.max(tensor, dim=1)[1].tolist()
-                label = class_labels[pred[0]]
-
+                pred = torch.max(tensor, dim=1)[1].tolist()[0]
+                label = class_labels[pred]
+                predicted_labels.append(label)
                 label_position = (x, y)
                 cv2.putText(
                     frame,
@@ -68,8 +67,15 @@ def main(model: nn.Module):
                     (0, 255, 0),
                     3,
                 )
-
+        """
+        if 'anger' in predicted_labels and not ('disgust' in predicted_labels): #(videodata.shape[0] - 1):
+            import matplotlib.pyplot as plt
+            plt.imshow(frame)
+            plt.show()
+        else:
+            cv2.imshow("Emotion Detector", frame)
+        """
         cv2.imshow("Emotion Detector", frame)
-
+        
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break

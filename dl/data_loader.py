@@ -129,7 +129,7 @@ class CustomDataset(Dataset):
         # ))
         labels = self.labels[idx].long()
         # augmentation_prob = 0.15
-        augmentation_prob = 0.3
+        augmentation_prob = 0.3 if self.train else 0.0
         # if augmentation_prob > 0:
         #    image = x.numpy()
         pick = t.rand(1).item()

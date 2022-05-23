@@ -6,7 +6,7 @@ from torch import nn
 import matplotlib.pyplot as plt
 
 
-class ResNetBlock(nn.Module):
+class ResidualBlock(nn.Module):
     def __init__(
         self,
         input_count: int,
@@ -65,7 +65,7 @@ class ResNetBlock(nn.Module):
         return out
 
 
-class PreActResNetBlock(nn.Module):
+class PreResidualBlock(nn.Module):
     def __init__(
         self,
         input_count,
@@ -76,10 +76,10 @@ class PreActResNetBlock(nn.Module):
         dropout: float = 0.3,
     ):
         """
-        input_count - number of input features
-        activation - activation function
-        output_reduction - reduce output shape by 2 on each axis
-        output_count - number of output features
+        input_count: number of input features
+        activation: activation function
+        output_reduction: reduce output shape by 2 on each axis
+        output_count: number of output features
         """
         super().__init__()
         if not output_reduction:
@@ -115,7 +115,11 @@ class PreActResNetBlock(nn.Module):
                 nn.BatchNorm2d(input_count),
                 activation(),
                 nn.Conv2d(
-                    input_count, output_count, kernel_size=1, stride=2, bias=False,
+                    input_count,
+                    output_count,
+                    kernel_size=1,
+                    stride=2,
+                    bias=False,
                 ),
             )
             if output_reduction
@@ -127,18 +131,16 @@ class PreActResNetBlock(nn.Module):
         if self.downsample is not None:
             x = self.downsample(x)
         out = z + x
+
         return out
 
 
 resnet_blocks_by_name = {
-    "ResNetBlock": ResNetBlock,
-    "PreActResNetBlock": PreActResNetBlock,
+    "ResNetBlock": ResidualBlock,
+    "PreActResNetBlock": PreResidualBlock,
 }
 activation_by_name = {
-    "tanh": nn.Tanh,
     "relu": nn.ReLU,
-    "leakyrelu": nn.LeakyReLU,
-    "gelu": nn.GELU,
 }
 
 
@@ -178,7 +180,7 @@ class ResNetEmotionClassifier(nn.Module):
         blocks_dimensions = self.hparams.blocks_dimensions
 
         if (  # if the output block is not the last one
-            self.hparams.block_class == PreActResNetBlock
+            self.hparams.block_class == PreResidualBlock
         ):
             self.input_net = nn.Sequential(
                 nn.Conv2d(
@@ -214,7 +216,9 @@ class ResNetEmotionClassifier(nn.Module):
                 blocks.append(
                     self.hparams.block_class(  # create block
                         input_count=blocks_dimensions[
-                            block_idx if not output_reduction else (block_idx - 1)
+                            block_idx
+                            if not output_reduction
+                            else (block_idx - 1)
                         ],
                         activation=self.hparams.activation,
                         output_reduction=output_reduction,
@@ -235,23 +239,20 @@ class ResNetEmotionClassifier(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(
-                    m.weight, mode="fan_out", nonlinearity=self.hparams.activation_name,
+                    m.weight,
+                    mode="fan_out",
+                    nonlinearity=self.hparams.activation_name,
                 )
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x):
+    def forward(self, x, act=False):
         raw_x = x
         x = x.squeeze(2)
 
         x = self.input_net(x)
         x = self.blocks(x)
-        if False:
-            _, axes = plt.subplots(1, 2)
-            filter = 127
-            axes[0].imshow(raw_x[0, 0].cpu())
-            axes[1].imshow(x[0, filter].cpu())
-            plt.show()
-        x = self.output_net(x)
-        return x
+        out = self.output_net(x)
+        filter = 127
+        return out if not act else x[:, filter]
