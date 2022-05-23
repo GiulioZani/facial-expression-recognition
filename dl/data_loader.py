@@ -18,24 +18,27 @@ import matplotlib.pyplot as plt
 class CustomDataModule(LightningDataModule):
     def __init__(self, params):
         super().__init__()
-        self.data_location = params.data_location
-        self.train_batch_size = params.train_batch_size
-        self.test_batch_size = params.test_batch_size
-        self.data_location = params.data_location
+        self.data_location = params.data_location  # path to the data
+        self.train_batch_size = (
+            params.train_batch_size
+        )  # batch size for training
+        self.test_batch_size = params.test_batch_size  # batch size for testing
+        self.data_location = params.data_location  # path to the data
         self.params = params
         self.shuffle = True
-        self.face_classifier = cv2.CascadeClassifier(
+        self.face_classifier = cv2.CascadeClassifier(  # face classifier
             "dl/video/face_detector/haarcascade_frontalface_default.xml"
         )
         # reads the file names from the data_location in h5 format
-        with h5py.File(self.data_location, "r") as f:
-            self.train_data = t.from_numpy(f["train_data"][:])
-            self.train_labels = t.from_numpy(f["train_labels"][:])
+        with h5py.File(self.data_location, "r") as f:  # reads the data
+            self.train_data = t.from_numpy(f["train_data"][:])  # training data
+            self.train_labels = t.from_numpy(
+                f["train_labels"][:]
+            )  # training labels
             self.test_data = t.from_numpy(f["test_data"][:])
             self.test_labels = t.from_numpy(f["test_labels"][:])
 
     def train_dataloader(self):
-        # creates a DeepCoastalDataset object
         dataset = CustomDataset(
             self.train_data,
             self.train_labels,
@@ -43,7 +46,7 @@ class CustomDataModule(LightningDataModule):
             train=True,
             imsize=self.params.imsize,
         )
-        return DataLoader(
+        return DataLoader(  # creates a DataLoader object
             dataset,
             batch_size=self.train_batch_size,
             drop_last=True,
@@ -51,8 +54,22 @@ class CustomDataModule(LightningDataModule):
             shuffle=self.shuffle,
         )
 
-    def val_dataloader(self):
-        # creates a DeepCoastalDataset object
+    def val_dataloader(self):  # validation dataloader
+        dataset = CustomDataset(  #  creates a DataLoader object
+            self.test_data,
+            self.test_labels,
+            self.face_classifier,
+            train=False,
+            imsize=self.params.imsize,
+        )
+        return DataLoader(
+            dataset,
+            batch_size=self.train_batch_size,
+            drop_last=True,
+            num_workers=3,
+        )
+
+    def test_dataloader(self):  # test dataloader
         dataset = CustomDataset(
             self.test_data,
             self.test_labels,
@@ -67,24 +84,8 @@ class CustomDataModule(LightningDataModule):
             num_workers=3,
         )
 
-    def test_dataloader(self):
-        # creates a DeepCoastalDataset object
-        dataset = CustomDataset(
-            self.test_data,
-            self.test_labels,
-            self.face_classifier,
-            train=False,
-            imsize=self.params.imsize,
-        )
-        return DataLoader(
-            dataset,
-            batch_size=self.train_batch_size,
-            drop_last=True,
-            num_workers=3,
-        )
 
-
-class RandomNoise:
+class RandomNoise:  # adds random noise to the image
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
@@ -93,8 +94,8 @@ class RandomNoise:
         return x + t.randn(x.shape) * self.std + self.mean
 
 
-class CustomDataset(Dataset):
-    def __init__(
+class CustomDataset(Dataset):  # custom dataset
+    def __init__(  # initializes the dataset
         self,
         data,
         labels,
