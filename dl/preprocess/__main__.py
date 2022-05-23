@@ -40,9 +40,7 @@ def preprocess(
             os.path.join(data_location, "labels.csv")
         ).values.tolist()
     }
-    emotion_keys = {
-        val: key for key, val in enumerate(tuple(set(labels.values())))
-    }
+    emotion_keys = {val: key for key, val in enumerate(tuple(set(labels.values())))}
     emotion_keys = emotion_keys
     labels = {key: emotion_keys[val] for key, val in labels.items()}
     files = tuple(
@@ -73,10 +71,7 @@ if __name__ == "__main__":
         help="Folder where dataset is saved.",
     )
     parser.add_argument(
-        "--imsize",
-        type=int,
-        default=128,
-        help="Size of the image after downsampling.",
+        "--imsize", type=int, default=128, help="Size of the image after downsampling.",
     )
     parser.add_argument(
         "--destination_folder",

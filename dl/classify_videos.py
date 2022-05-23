@@ -26,16 +26,17 @@ def main(model: nn.Module):
     face_classifier = cv2.CascadeClassifier(
         "dl/video/face_detector/haarcascade_frontalface_default.xml"
     )
-    for frame in videodata:
+    cap = cv2.VideoCapture(0)
+    # for frame in videodata:
+    while cap.isOpened():
+        ret, frame = cap.read()
         labels = []
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray, 1.3, 5)
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             roi_gray = gray[y : y + h, x : x + w]
-            roi_gray = cv2.resize(
-                roi_gray, (128, 128), interpolation=cv2.INTER_AREA
-            )
+            roi_gray = cv2.resize(roi_gray, (128, 128), interpolation=cv2.INTER_AREA)
 
             if np.sum([roi_gray]) != 0:
                 roi = tt.functional.to_pil_image(roi_gray)

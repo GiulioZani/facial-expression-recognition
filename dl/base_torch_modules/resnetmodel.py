@@ -13,6 +13,8 @@ class ResNetBlock(nn.Module):
         activation,
         output_reduction=False,
         output_count=-1,
+        kernel_size: int = 3,
+        dropout: float = 0.3,
     ):
         """
         input_count - number of input features
@@ -28,7 +30,7 @@ class ResNetBlock(nn.Module):
             nn.Conv2d(
                 input_count,
                 output_count,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 padding=1,
                 stride=1 if not output_reduction else 2,
                 bias=False,
@@ -38,17 +40,17 @@ class ResNetBlock(nn.Module):
             nn.Conv2d(
                 output_count,
                 output_count,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 padding=1,
                 bias=False,
             ),
             nn.BatchNorm2d(output_count),
-            nn.Dropout(0.3),
+            nn.Dropout(dropout),
         )
 
         # 1x1 convolution, stride 2
         self.downsample = (
-            nn.Conv2d(input_count, output_count, kernel_size=1, stride=2)
+            nn.Conv2d(input_count, output_count, kernel_size=1, stride=2,)
             if output_reduction
             else None
         )
@@ -65,7 +67,13 @@ class ResNetBlock(nn.Module):
 
 class PreActResNetBlock(nn.Module):
     def __init__(
-        self, input_count, activation, output_reduction=False, output_count=-1
+        self,
+        input_count,
+        activation,
+        output_reduction=False,
+        output_count=-1,
+        kernel_size: int = 3,
+        dropout: float = 0.3,
     ):
         """
         input_count - number of input features
@@ -84,7 +92,7 @@ class PreActResNetBlock(nn.Module):
             nn.Conv2d(
                 input_count,
                 output_count,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 padding=1,
                 stride=1 if not output_reduction else 2,
                 bias=False,
@@ -94,10 +102,11 @@ class PreActResNetBlock(nn.Module):
             nn.Conv2d(
                 output_count,
                 output_count,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 padding=1,
                 bias=False,
             ),
+            nn.Dropout(dropout),
         )
 
         # 1x1 convolution, non-linearity | not done on skip connection
@@ -106,11 +115,7 @@ class PreActResNetBlock(nn.Module):
                 nn.BatchNorm2d(input_count),
                 activation(),
                 nn.Conv2d(
-                    input_count,
-                    output_count,
-                    kernel_size=1,
-                    stride=2,
-                    bias=False,
+                    input_count, output_count, kernel_size=1, stride=2, bias=False,
                 ),
             )
             if output_reduction
@@ -158,7 +163,6 @@ class ResNetEmotionClassifier(nn.Module):
         super().__init__()
         self.params = params
         self.output_block = output_block
-
         assert block_name in resnet_blocks_by_name
         self.hparams = SimpleNamespace(
             blocks_dimensions=blocks_dimensions,
@@ -180,21 +184,23 @@ class ResNetEmotionClassifier(nn.Module):
                 nn.Conv2d(
                     1,
                     blocks_dimensions[0],
-                    kernel_size=3,
+                    kernel_size=self.params.kernel_size,
                     padding=1,
                     bias=False,
-                )
+                ),
+                nn.Dropout(self.params.dropout),
             )
         else:
             self.input_net = nn.Sequential(
                 nn.Conv2d(
                     1,
                     blocks_dimensions[0],
-                    kernel_size=3,
+                    kernel_size=self.params.kernel_size,
                     padding=1,
                     bias=False,
                 ),
                 nn.BatchNorm2d(blocks_dimensions[0]),
+                nn.Dropout(self.params.dropout),
                 self.hparams.activation(),
             )
 
@@ -208,13 +214,13 @@ class ResNetEmotionClassifier(nn.Module):
                 blocks.append(
                     self.hparams.block_class(  # create block
                         input_count=blocks_dimensions[
-                            block_idx
-                            if not output_reduction
-                            else (block_idx - 1)
+                            block_idx if not output_reduction else (block_idx - 1)
                         ],
                         activation=self.hparams.activation,
                         output_reduction=output_reduction,
                         output_count=blocks_dimensions[block_idx],
+                        kernel_size=self.params.kernel_size,
+                        dropout=self.params.dropout,
                     )
                 )
         self.blocks = nn.Sequential(*blocks)
@@ -229,9 +235,7 @@ class ResNetEmotionClassifier(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(
-                    m.weight,
-                    mode="fan_out",
-                    nonlinearity=self.hparams.activation_name,
+                    m.weight, mode="fan_out", nonlinearity=self.hparams.activation_name,
                 )
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
@@ -243,7 +247,7 @@ class ResNetEmotionClassifier(nn.Module):
 
         x = self.input_net(x)
         x = self.blocks(x)
-        if True:
+        if False:
             _, axes = plt.subplots(1, 2)
             filter = 127
             axes[0].imshow(raw_x[0, 0].cpu())

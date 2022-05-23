@@ -25,6 +25,8 @@ def main():
     # for param in classifier.parameters():
     #    param.requires_grad = False  # freeze the pretrained model
     classifier.freeze()
+    plt.imshow(classifier.generator.blocks[0].net[0].weight.data[0, 0].cpu())
+    plt.savefig(os.path.join(curdir, "kernel.png"))
     learnable_image = t.zeros(
         (1, 1, params.imsize, params.imsize), device=device, requires_grad=True
     )
@@ -33,7 +35,7 @@ def main():
     ).unsqueeze(0)
     optimizer = t.optim.Adam([learnable_image], lr=1e-3)
     losses = []
-    for i in tqdm(range(5000)):
+    for i in tqdm(range(1000)):
         if i % 1000 == 0:
             optimizer.param_groups[0]["lr"] *= 0.1
         pred_label = classifier(t.sigmoid(learnable_image))
@@ -45,10 +47,10 @@ def main():
         optimizer.zero_grad()
     learnable_image = t.sigmoid(learnable_image).detach().cpu()
     plt.plot(losses)
-    plt.show()
+    plt.savefig(os.path.join(curdir, "learning_image_loss.png"))
     print(t.round(t.softmax(classifier(learnable_image.cuda()).cpu(), dim=1)))
     plt.imshow(learnable_image[0, 0])
-    plt.show()
+    plt.savefig(os.path.join(curdir, "learned_image.png"))
 
 
 if __name__ == "__main__":

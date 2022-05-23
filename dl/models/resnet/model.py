@@ -1,7 +1,5 @@
 from torch.nn.modules.activation import ReLU
-from ...base_lightning_modules.base_classification_model import (
-    BaseClassificationModel,
-)
+from ...base_lightning_modules.base_classification_model import BaseClassificationModel
 import ipdb
 
 from ...base_torch_modules.resnetmodel import ResNetEmotionClassifier

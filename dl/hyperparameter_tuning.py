@@ -22,24 +22,24 @@ def run_tuning():
 def objective(trial):
     # choose network parameters:
     # "cuda": true,
-        # "train_batch_size": 16,
-        # "test_batch_size": 50,
-        # "imsize": 128,
-        # "n_channels": 4,
-        # "ngf": 64,
-        # "ndf": 32,
-        # "epochs": 10,
-        # "lr": 0.0002,
-        # "b1": 0.5,
-        # "b2": 0.999,
-        # "gaussian_noise_std": 0.1,
-        # "in_seq_len": 5,
-        # "out_seq_len": 5,
-        # "max_epochs": 100,
-        # "early_stopping_patience": 5,
-        # "reduce_lr_on_plateau_patience": 2,
-        # "data_location": "/mnt/preprocessed_data.h5",
-        # "crop":64
+    # "train_batch_size": 16,
+    # "test_batch_size": 50,
+    # "imsize": 128,
+    # "n_channels": 4,
+    # "ngf": 64,
+    # "ndf": 32,
+    # "epochs": 10,
+    # "lr": 0.0002,
+    # "b1": 0.5,
+    # "b2": 0.999,
+    # "gaussian_noise_std": 0.1,
+    # "in_seq_len": 5,
+    # "out_seq_len": 5,
+    # "max_epochs": 100,
+    # "early_stopping_patience": 5,
+    # "reduce_lr_on_plateau_patience": 2,
+    # "data_location": "/mnt/preprocessed_data.h5",
+    # "crop":64
 
     # trial.suggest_categorical('name', ['opt1', 'opt2'])
     # trial.suggest_int('name', 2, 32, step=2w)

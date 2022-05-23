@@ -1,0 +1,13 @@
+h5py==3.6.0
+ipdb==0.13.9
+matplotlib==3.5.1
+numpy==1.21.2
+optuna==2.10.0
+pandas==1.4.2
+pytorch_lightning==1.6.0
+scikit_learn==1.1.1
+scikit_video==1.1.11
+torch==1.12.0.dev20220505
+torchmetrics==0.8.2
+torchvision==0.13.0.dev20220505
+tqdm==4.64.0

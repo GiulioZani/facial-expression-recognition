@@ -6,8 +6,21 @@ from argparse import Namespace
 import matplotlib.pyplot as plt
 import ipdb
 import os
-import torchmetrics
-from torchmetrics.classification import accuracy
+from torchmetrics import Accuracy, Precision, Recall, F1Score, MetricCollection
+
+import traceback
+import warnings
+import sys
+
+
+def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+
+    log = file if hasattr(file, "write") else sys.stderr
+    traceback.print_stack(file=log)
+    log.write(warnings.formatwarning(message, category, filename, lineno, line))
+
+
+# warnings.showwarning = warn_with_traceback
 
 
 class BaseClassificationModel(LightningModule):
@@ -17,8 +30,18 @@ class BaseClassificationModel(LightningModule):
         self.save_hyperparameters()
         self.generator = t.nn.Sequential()
         self.loss = t.nn.CrossEntropyLoss()
-        self.val_accuracy = torchmetrics.Accuracy()
-        self.test_accuracy = torchmetrics.Accuracy()
+        metrics = MetricCollection(
+            [
+                Accuracy(num_classes=params.num_classes, average="weighted"),
+                Precision(num_classes=params.num_classes, average="weighted"),
+                Recall(num_classes=params.num_classes, average="weighted"),
+                # F1Score(num_classes=params.num_classes, average="weighted"),
+            ]
+        )
+        self.train_metrics = metrics.clone()
+        self.val_metrics = metrics.clone()
+        self.test_metrics = metrics.clone()
+        self.best_val_accuracy = 0
 
     def label_to_one_hot(self, labels: t.Tensor, n_classes=8):
         labels = labels.long()
@@ -37,48 +60,51 @@ class BaseClassificationModel(LightningModule):
         x, y = batch
         y_pred = self(x)
         loss = self.loss(y_pred, y)
+        pred_y = self.one_hot_to_label(y_pred)
+        self.train_metrics.update(pred_y, y)
         return {"loss": loss}
 
     def validation_epoch_end(self, outputs):
-        acc = self.val_accuracy.compute()
+        avg_loss = t.stack([x["loss"] for x in outputs]).mean()
+        metrics = self.val_metrics.compute()
+        acc = metrics["Accuracy"]
         self.log("val_acc", acc, prog_bar=True)
-        self.log("val_loss", 1 - acc, prog_bar=True)
-        self.val_accuracy.reset()
-        if "save_path" in self.params.__dict__:
+        self.log("val_loss", avg_loss, prog_bar=True)
+        self.log("val_performance", metrics | {"loss": avg_loss})
+        self.val_metrics.reset()
+        if acc >= self.best_val_accuracy and "save_path" in self.params.__dict__:
+            self.best_val_accuracy = acc
             t.save(
                 self.state_dict(),
                 os.path.join(self.params.save_path, "checkpoint.ckpt"),
             )
-        return {"val_loss": acc}
+            print("Saved model as new best.")
 
     def training_epoch_end(self, outputs):
         avg_loss = t.stack([x["loss"] for x in outputs]).mean()
+        self.log("train_performance", self.train_metrics.compute() | {"loss": avg_loss})
+        self.train_metrics.reset()
 
-    def validation_step(
-        self, batch: tuple[t.Tensor, t.Tensor], batch_idx: int
-    ):
+    def validation_step(self, batch: tuple[t.Tensor, t.Tensor], batch_idx: int):
         x, y = batch
         if batch_idx == 0:
             pass
-        pred_y = self.one_hot_to_label(self(x))
-        self.val_accuracy.update(pred_y, y)
+        pred_y = self(x)
+        pred_label = self.one_hot_to_label(pred_y)
+        self.val_metrics.update(pred_label, y)
+        return {"loss": self.loss(pred_y, y)}
 
     def test_step(self, batch: tuple[t.Tensor, t.Tensor], batch_idx: int):
         x, y = batch
         if batch_idx == 0:
             pass
-        pred_y = self.label_to_one_hot(self(x))
-        self.test_accuracy.update(pred_y, y)
-        return
+        pred_y = self.one_hot_to_label(self(x))
+        self.test_metrics.update(pred_y, y)
 
     def test_epoch_end(self, outputs):
-        accuracy = self.test_accuracy.compute()
-        self.test_accuracy.reset()
-        test_metrics = {
-            "accuracy": accuracy,
-        }
-        test_metrics = {k: v for k, v in test_metrics.items()}
-        self.log("test_performance", test_metrics, prog_bar=True)
+        metrics = self.test_metrics.compute()
+        self.test_metrics.reset()
+        self.log("test_performance", metrics, prog_bar=True)
 
     def configure_optimizers(self):
         lr = self.params.lr
@@ -86,9 +112,7 @@ class BaseClassificationModel(LightningModule):
         b2 = self.params.b2
 
         optimizer = t.optim.Adam(
-            self.generator.parameters(),
-            lr=lr,
-            betas=(b1, b2),  # weight_decay=0.001
+            self.generator.parameters(), lr=lr, betas=(b1, b2),  # weight_decay=0.001
         )
 
         scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(

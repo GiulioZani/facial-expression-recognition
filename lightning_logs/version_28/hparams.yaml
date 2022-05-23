@@ -1,0 +1,25 @@
+params: !!python/object:argparse.Namespace
+  b1: 0.5
+  b2: 0.999
+  crop: 64
+  cuda: true
+  data_location: /mnt/preprocessed_data.h5
+  dropout: 0.5
+  early_stopping_patience: 5
+  exec: classify_videos
+  gaussian_noise_std: 0.1
+  imsize: 128
+  in_seq_len: 5
+  kernel_size: 3
+  lr: 0.0002
+  max_epochs: 1
+  n_channels: 4
+  ndf: 32
+  ngf: 64
+  num_classes: 8
+  out_seq_len: 5
+  reduce_lr_on_plateau_patience: 2
+  save_path: dl/models/resnet
+  test_batch_size: 50
+  train_batch_size: 31
+train_batch_size: 31
