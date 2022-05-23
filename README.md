@@ -1,5 +1,11 @@
 # Computer Vision: Emotion Recognition
 
+The goal of this project is to build a model that can recognize the emotion of a face. The model will be trained on a dataset of images of faces and their emotion. The model will be able to recognize the emotion of a face based on the image. 
+
+We have used pytorch, pytorch lightning, and pytorch vision.
+
+The file containig the model used, resnet can be found in the `dl/base_torch_modules/resnetmodel.py`. The pretrained model is contained in the `dl/models/resnet/checkpoint.ckpt`.
+
 ## Installation
 Make sure you have at least python 3.9 installed.
 If the `dlpm` folder is empty, you need to clone the repository.
